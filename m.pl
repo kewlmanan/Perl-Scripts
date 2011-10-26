@@ -24,7 +24,7 @@ my $filename=$ARGV[0].".pl";
 open(handler,">$filename");
 
 print handler "#! /usr/bin/perl \n";
-print handler "use strict;";
+print handler "use strict;\n";
 print handler "use warnings;";
 
 close (handler);
