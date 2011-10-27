@@ -6,7 +6,7 @@ open (fp,"<fred");
 
 while(<fp>)
 {
-
+	chomp;
 	if(/(?=.*fred.*)(?=.*wilma.*)/) # matches any input line that has both fred and wilma
 	{
 		print $_;
@@ -24,6 +24,16 @@ while(<fp>)
 		print $_;
 		print "\n";
 	}
+
+	if(/\b[a-zA-Z]+a\b/) #matches words ending with a
+        {
+                print "Matched |$`<$&>$'|\n";   
+        }
+        else
+        {
+                print "|$_| Did not match\n";
+        }
+
 }
 
 close fp;
