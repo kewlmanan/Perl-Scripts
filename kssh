@@ -1,0 +1,66 @@
+# This program removes the host one is trying to ssh into from the known hosts file
+
+
+
+#!/usr/bin/perl -w
+
+use warnings;
+use strict;
+use Socket;
+
+sub hToIP {
+   my (@bytes, @octets, $packedaddr, $raw_addr, $host_name, $ip);
+
+   if($_[0] =~ /[a-zA-Z]/g) {
+      $raw_addr = (gethostbyname($_[0]))[4];
+      @octets = unpack("C4", $raw_addr);
+      $host_name = join(".", @octets);
+   } else {
+      @bytes = split(/\./, $_[0]);
+      $packedaddr = pack("C4",@bytes);
+      $host_name = (gethostbyaddr($packedaddr, 2))[0];
+   }
+   return($host_name);
+}
+
+my ($host, $host_ip);
+
+if ( defined $ARGV[0] ) {
+   # find host
+   if ($ARGV[0] =~ /.*\@(.*)/) {
+      $host = $1;
+   } else {
+      $host = $ARGV[0];
+   }
+
+   # remove key
+   my $F;
+   open ($F, "$ENV{HOME}/.ssh/known_hosts") or print "Can't open known_hosts file.\n";
+   my @oldlines = <$F>;
+   close $F;
+
+   # find IP of hostname
+   $host_ip = hToIP($host);
+
+   # strip out hostname
+   my @lines_wo_host = grep { !/$host/ } @oldlines;
+
+   # strip out host IP
+   my @lines = grep { !/$host_ip/ } @lines_wo_host;
+   
+   unless (@lines == @oldlines) {
+      open ($F, ">$ENV{HOME}/.ssh/known_hosts_new") or print "Can't create new known_hosts file.\n";
+      for (@lines) {
+         print $F $_;
+      }
+      close $F;
+      system ("mv","-f","$ENV{HOME}/.ssh/known_hosts_new","$ENV{HOME}/.ssh/known_hosts") or print "Replace known_hosts file successfully.\n";
+   }
+   # Add new key
+   system("ssh-keyscan $host >> $ENV{HOME}/.ssh/known_hosts");
+   # ssh with key already removed
+#   exec ("ssh -o StrictHostKeyChecking=no @ARGV");
+   exec ("ssh -e '!' @ARGV");
+} else {
+   exec ("ssh");
+}
